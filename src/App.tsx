@@ -31,6 +31,7 @@ const ASSETS_MAPPING: Record<string, any[]> = {
     { id: 'OANDA:EUR_USD', symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
     { id: 'OANDA:GBP_USD', symbol: 'GBP/USD', name: 'British Pound / US Dollar', type: 'forex' },
     { id: 'OANDA:USD_JPY', symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen', type: 'forex' },
+    { id: 'OANDA:XAU_USD', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   twelvedata: [
     { id: 'BTC/USD', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
@@ -39,6 +40,7 @@ const ASSETS_MAPPING: Record<string, any[]> = {
     { id: 'EUR/USD', symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
     { id: 'GBP/USD', symbol: 'GBP/USD', name: 'British Pound / US Dollar', type: 'forex' },
     { id: 'USD/JPY', symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen', type: 'forex' },
+    { id: 'XAU/USD', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   alphavantage: [
     { id: 'BTC', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
@@ -47,6 +49,7 @@ const ASSETS_MAPPING: Record<string, any[]> = {
     { id: 'EURUSD', symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
     { id: 'GBPUSD', symbol: 'GBP/USD', name: 'British Pound / US Dollar', type: 'forex' },
     { id: 'USDJPY', symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen', type: 'forex' },
+    { id: 'XAU', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   polygon: [
     { id: 'X:BTCUSD', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
@@ -55,6 +58,7 @@ const ASSETS_MAPPING: Record<string, any[]> = {
     { id: 'C:EURUSD', symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
     { id: 'C:GBPUSD', symbol: 'GBP/USD', name: 'British Pound / US Dollar', type: 'forex' },
     { id: 'C:USDJPY', symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen', type: 'forex' },
+    { id: 'C:XAUUSD', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   fmp: [
     { id: 'BTCUSD', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
@@ -63,16 +67,19 @@ const ASSETS_MAPPING: Record<string, any[]> = {
     { id: 'EURUSD', symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
     { id: 'GBPUSD', symbol: 'GBP/USD', name: 'British Pound / US Dollar', type: 'forex' },
     { id: 'USDJPY', symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen', type: 'forex' },
+    { id: 'XAUUSD', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   marketstack: [
     { id: 'BTC', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
     { id: 'QQQ', symbol: 'US100', name: 'Nasdaq 100', type: 'stock' },
     { id: 'SPY', symbol: 'US500', name: 'S&P 500', type: 'stock' },
+    { id: 'XAU', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   iexcloud: [
     { id: 'BTCUSD', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
     { id: 'QQQ', symbol: 'US100', name: 'Nasdaq 100', type: 'stock' },
     { id: 'SPY', symbol: 'US500', name: 'S&P 500', type: 'stock' },
+    { id: 'XAUUSD', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   cryptocompare: [
     { id: 'BTC', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
@@ -100,15 +107,18 @@ const ASSETS_MAPPING: Record<string, any[]> = {
     { id: 'AAPL.US', symbol: 'AAPL', name: 'Apple', type: 'stock' },
     { id: 'MSFT.US', symbol: 'MSFT', name: 'Microsoft', type: 'stock' },
     { id: 'EURUSD.FOREX', symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
+    { id: 'XAUUSD.FOREX', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   barchart: [
     { id: 'BTCUSD', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
     { id: 'AAPL', symbol: 'AAPL', name: 'Apple', type: 'stock' },
     { id: 'EURUSD', symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
+    { id: 'XAUUSD', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ],
   custom: [
     { id: 'BTC', symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
     { id: 'ETH', symbol: 'ETH', name: 'Ethereum', type: 'crypto' },
+    { id: 'GOLD', symbol: 'GOLD', name: 'Gold', type: 'commodity' },
   ]
 };
 
