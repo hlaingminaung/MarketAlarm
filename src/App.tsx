@@ -5,30 +5,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
-  auth, 
-  db, 
-  googleProvider, 
-  signInWithPopup, 
-  signOut, 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc,
-  onSnapshot, 
-  query, 
-  where, 
-  addDoc, 
-  deleteDoc, 
-  updateDoc 
-} from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { 
   Bell, 
   BellOff, 
   Plus, 
   Trash2, 
-  LogOut, 
-  LogIn, 
   TrendingUp, 
   TrendingDown, 
   AlertTriangle, 
@@ -144,7 +124,6 @@ const ALARM_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/995/995-pre
 // --- Types ---
 interface Alert {
   id: string;
-  userId: string;
   symbol: string;
   targetPrice: number;
   condition: 'above' | 'below';
@@ -160,8 +139,6 @@ interface PriceData {
 }
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [isFetching, setIsFetching] = useState(false);
@@ -182,112 +159,55 @@ export default function App() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // --- Auth ---
+  // --- Local Storage Persistence ---
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setIsAuthReady(true);
-      
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          if (data.apiProvider) setApiProvider(data.apiProvider);
-          if (data.apiKey) setUserApiKey(data.apiKey);
-          if (data.customApiUrl) setCustomApiUrl(data.customApiUrl);
-        } else {
-          // Create user doc if it doesn't exist
-          await setDoc(userDocRef, {
-            uid: currentUser.uid,
-            email: currentUser.email,
-            displayName: currentUser.displayName,
-            createdAt: Date.now(),
-            apiProvider: 'finnhub',
-            apiKey: '',
-            customApiUrl: ''
-          });
-        }
-      }
-    });
-    return unsubscribe;
+    const savedProvider = localStorage.getItem('market_alarm_provider');
+    const savedKey = localStorage.getItem('market_alarm_key');
+    const savedCustomUrl = localStorage.getItem('market_alarm_custom_url');
+    const savedAlerts = localStorage.getItem('market_alarm_alerts');
+
+    if (savedProvider) setApiProvider(savedProvider);
+    if (savedKey) setUserApiKey(savedKey);
+    if (savedCustomUrl) setCustomApiUrl(savedCustomUrl);
+    if (savedAlerts) setAlerts(JSON.parse(savedAlerts));
   }, []);
 
   useEffect(() => {
     setNewSymbol(ASSETS_MAPPING[apiProvider][0].id);
   }, [apiProvider]);
 
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error('Login error:', error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setAlerts([]);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  // --- Firestore Alerts ---
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(collection(db, 'alerts'), where('userId', '==', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const alertsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Alert[];
-      setAlerts(alertsData.sort((a, b) => b.createdAt - a.createdAt));
-    }, (error) => {
-      console.error('Firestore Error:', error);
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  const addAlert = async (e: React.FormEvent) => {
+  // --- Alerts Logic ---
+  const addAlert = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newTargetPrice) return;
+    if (!newTargetPrice) return;
 
-    try {
-      await addDoc(collection(db, 'alerts'), {
-        userId: user.uid,
-        symbol: newSymbol,
-        targetPrice: parseFloat(newTargetPrice),
-        condition: newCondition,
-        isActive: true,
-        createdAt: Date.now()
-      });
-      setNewTargetPrice('');
-    } catch (error) {
-      console.error('Error adding alert:', error);
-    }
+    const newAlert: Alert = {
+      id: Math.random().toString(36).substr(2, 9),
+      symbol: newSymbol,
+      targetPrice: parseFloat(newTargetPrice),
+      condition: newCondition,
+      isActive: true,
+      createdAt: Date.now()
+    };
+
+    const updatedAlerts = [newAlert, ...alerts];
+    setAlerts(updatedAlerts);
+    localStorage.setItem('market_alarm_alerts', JSON.stringify(updatedAlerts));
+    setNewTargetPrice('');
   };
 
-  const deleteAlert = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'alerts', id));
-    } catch (error) {
-      console.error('Error deleting alert:', error);
-    }
+  const deleteAlert = (id: string) => {
+    const updatedAlerts = alerts.filter(a => a.id !== id);
+    setAlerts(updatedAlerts);
+    localStorage.setItem('market_alarm_alerts', JSON.stringify(updatedAlerts));
   };
 
-  const toggleAlert = async (alert: Alert) => {
-    try {
-      await updateDoc(doc(db, 'alerts', alert.id), {
-        isActive: !alert.isActive
-      });
-    } catch (error) {
-      console.error('Error toggling alert:', error);
-    }
+  const toggleAlert = (alert: Alert) => {
+    const updatedAlerts = alerts.map(a => 
+      a.id === alert.id ? { ...a, isActive: !a.isActive } : a
+    );
+    setAlerts(updatedAlerts);
+    localStorage.setItem('market_alarm_alerts', JSON.stringify(updatedAlerts));
   };
 
   // --- Price Monitoring ---
@@ -467,19 +387,12 @@ export default function App() {
     }
   }, [fetchPrices, apiProvider, userApiKey, customApiUrl]);
 
-  const saveSettings = async () => {
-    if (!user) return;
-    try {
-      await updateDoc(doc(db, 'users', user.uid), {
-        apiProvider,
-        apiKey: userApiKey,
-        customApiUrl
-      });
-      setShowSettings(false);
-      fetchPrices();
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    }
+  const saveSettings = () => {
+    localStorage.setItem('market_alarm_provider', apiProvider);
+    localStorage.setItem('market_alarm_key', userApiKey);
+    localStorage.setItem('market_alarm_custom_url', customApiUrl);
+    setShowSettings(false);
+    fetchPrices();
   };
 
   // --- Alarm Logic ---
@@ -517,10 +430,11 @@ export default function App() {
     }
 
     // Deactivate the alert so it doesn't keep triggering
-    updateDoc(doc(db, 'alerts', alert.id), {
-      isActive: false,
-      triggeredAt: Date.now()
-    });
+    const updatedAlerts = alerts.map(a => 
+      a.id === alert.id ? { ...a, isActive: false, triggeredAt: Date.now() } : a
+    );
+    setAlerts(updatedAlerts);
+    localStorage.setItem('market_alarm_alerts', JSON.stringify(updatedAlerts));
   };
 
   const stopAlarm = () => {
@@ -531,14 +445,6 @@ export default function App() {
       audioRef.current.currentTime = 0;
     }
   };
-
-  if (!isAuthReady) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-emerald-500/30">
@@ -556,44 +462,22 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4">
-            {user && (
-              <button 
-                onClick={() => setShowSettings(!showSettings)}
-                className={cn(
-                  "p-2 rounded-full transition-colors",
-                  showSettings ? "bg-emerald-500/20 text-emerald-500" : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-                )}
-                title="API Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-            )}
-            {user ? (
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-zinc-400 hidden sm:inline">{user.email}</span>
-                <button 
-                  onClick={handleLogout}
-                  className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-zinc-100"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <button 
-                onClick={handleLogin}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-zinc-950 font-semibold rounded-lg hover:bg-emerald-400 transition-all active:scale-95"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Sign In</span>
-              </button>
-            )}
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className={cn(
+                "p-2 rounded-full transition-colors",
+                showSettings ? "bg-emerald-500/20 text-emerald-500" : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+              )}
+              title="API Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {user && showSettings && (
+        {showSettings && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -693,24 +577,7 @@ export default function App() {
           </motion.div>
         )}
 
-        {!user ? (
-          <div className="text-center py-20">
-            <div className="mb-6 inline-flex p-4 bg-zinc-900 rounded-full border border-zinc-800">
-              <Bell className="w-12 h-12 text-zinc-500" />
-            </div>
-            <h2 className="text-3xl font-bold mb-4">Never miss a price move</h2>
-            <p className="text-zinc-400 max-w-md mx-auto mb-8">
-              Set custom price alerts for major crypto and US indices and get a loud alarm when they hit your target.
-            </p>
-            <button 
-              onClick={handleLogin}
-              className="px-8 py-3 bg-emerald-500 text-zinc-950 font-bold rounded-xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20"
-            >
-              Get Started with Google
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Left Column: Create Alert */}
             <div className="md:col-span-1 space-y-6">
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
@@ -891,8 +758,7 @@ export default function App() {
               </AnimatePresence>
             </div>
           </div>
-        )}
-      </main>
+        </main>
 
       {/* Alarm Overlay */}
       <AnimatePresence>
