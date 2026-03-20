@@ -1,0 +1,5 @@
+{
+  "name": "Market Alarm",
+  "description": "A market price alert app that triggers a loud alarm when your target price is hit. Supports crypto and stocks.",
+  "requestFramePermissions": ["notifications"]
+}
